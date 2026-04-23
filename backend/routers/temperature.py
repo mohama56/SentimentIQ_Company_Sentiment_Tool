@@ -2,6 +2,7 @@
 routers/temperature.py — Primary analysis endpoint.
 """
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from fastapi import APIRouter, HTTPException, Query
 from models.schemas import TemperatureResponse
 from services.data_service import (
@@ -36,11 +37,11 @@ def get_temperature_score(ticker: str = Query(..., description="Stock ticker, e.
     # Load real saved history for momentum + trend chart
     history = load_history(ticker)
 
-    # Fetch from all sources — each is independent, failures return []
+    # Fetch from all sources in parallel — each is independent, failures return []
     all_docs = []
     financials = {}
 
-    for fetcher, args in [
+    fetch_tasks = [
         (fetch_reddit,        (ticker, company_name)),
         (fetch_google_news,   (ticker, company_name)),
         (fetch_yahoo_news,    (ticker,)),
@@ -48,16 +49,21 @@ def get_temperature_score(ticker: str = Query(..., description="Stock ticker, e.
         (fetch_financial_rss, (ticker, company_name)),
         (fetch_gnews,         (ticker, company_name)),
         (fetch_edgar,         (ticker,)),
-    ]:
-        try:
-            all_docs.extend(fetcher(*args))
-        except Exception as e:
-            logger.warning(f"{fetcher.__name__} failed: {e}")
+        (fetch_financials,    (ticker,)),
+    ]
 
-    try:
-        financials = fetch_financials(ticker)
-    except Exception as e:
-        logger.warning(f"Financials failed: {e}")
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {pool.submit(fetcher, *args): fetcher.__name__ for fetcher, args in fetch_tasks}
+        for future in as_completed(futures, timeout=60):
+            name = futures[future]
+            try:
+                result = future.result()
+                if name == "fetch_financials":
+                    financials = result or {}
+                else:
+                    all_docs.extend(result or [])
+            except Exception as e:
+                logger.warning(f"{name} failed: {e}")
 
     if not all_docs:
         raise HTTPException(
