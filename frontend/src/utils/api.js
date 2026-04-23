@@ -8,7 +8,7 @@
  * set an error state for the UI.
  */
 
-const BASE_URL = '/api/v1'
+const BASE_URL = (import.meta.env.VITE_API_URL ?? '') + '/api/v1'
 
 /** Generic fetch wrapper — throws on non-OK responses. */
 async function apiFetch(path) {
