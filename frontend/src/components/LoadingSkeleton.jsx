@@ -45,6 +45,9 @@ export function LoadingSkeleton({ ticker }) {
               }}>{ticker}</span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{STAGES[stage]}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, opacity: 0.7 }}>
+              Running multi-model NLP pipeline — this may take 30–90 seconds. Please be patient.
+            </div>
           </div>
           <div style={{
             fontFamily: 'Space Mono, monospace',
