@@ -5,8 +5,9 @@ export function logoUrl(domain) {
   return `https://img.logo.dev/${domain}?token=${LOGO_TOKEN}&size=40`
 }
 
-const TICKERS = [
-  { ticker: 'AAPL',  name: 'Apple Inc.',             sector: 'Technology',     domain: 'apple.com'        },
+export const TICKERS = [
+  // Mega-cap tech
+  { ticker: 'AAPL',  name: 'Apple Inc.',              sector: 'Technology',     domain: 'apple.com'        },
   { ticker: 'MSFT',  name: 'Microsoft Corporation',   sector: 'Technology',     domain: 'microsoft.com'    },
   { ticker: 'GOOGL', name: 'Alphabet Inc.',            sector: 'Technology',     domain: 'google.com'       },
   { ticker: 'AMZN',  name: 'Amazon.com Inc.',          sector: 'Consumer',       domain: 'amazon.com'       },
@@ -15,33 +16,74 @@ const TICKERS = [
   { ticker: 'NVDA',  name: 'NVIDIA Corporation',       sector: 'Semiconductors', domain: 'nvidia.com'       },
   { ticker: 'AMD',   name: 'Advanced Micro Devices',   sector: 'Semiconductors', domain: 'amd.com'          },
   { ticker: 'NFLX',  name: 'Netflix Inc.',             sector: 'Entertainment',  domain: 'netflix.com'      },
+  // Finance
   { ticker: 'JPM',   name: 'JPMorgan Chase',           sector: 'Finance',        domain: 'jpmorganchase.com'},
   { ticker: 'GS',    name: 'Goldman Sachs',            sector: 'Finance',        domain: 'goldmansachs.com' },
+  { ticker: 'MS',    name: 'Morgan Stanley',           sector: 'Finance',        domain: 'morganstanley.com'},
+  { ticker: 'BAC',   name: 'Bank of America',          sector: 'Finance',        domain: 'bankofamerica.com'},
   { ticker: 'V',     name: 'Visa Inc.',                sector: 'Finance',        domain: 'visa.com'         },
+  { ticker: 'MA',    name: 'Mastercard Inc.',          sector: 'Finance',        domain: 'mastercard.com'   },
   { ticker: 'COIN',  name: 'Coinbase Global',          sector: 'Finance',        domain: 'coinbase.com'     },
+  { ticker: 'HOOD',  name: 'Robinhood Markets',        sector: 'Finance',        domain: 'robinhood.com'    },
+  { ticker: 'PYPL',  name: 'PayPal Holdings',          sector: 'Finance',        domain: 'paypal.com'       },
+  // Enterprise / Cloud
   { ticker: 'PLTR',  name: 'Palantir Technologies',    sector: 'Technology',     domain: 'palantir.com'     },
   { ticker: 'SNOW',  name: 'Snowflake Inc.',           sector: 'Technology',     domain: 'snowflake.com'    },
   { ticker: 'ADBE',  name: 'Adobe Inc.',               sector: 'Technology',     domain: 'adobe.com'        },
   { ticker: 'CRM',   name: 'Salesforce Inc.',          sector: 'Technology',     domain: 'salesforce.com'   },
+  { ticker: 'NOW',   name: 'ServiceNow Inc.',          sector: 'Technology',     domain: 'servicenow.com'   },
+  { ticker: 'DDOG',  name: 'Datadog Inc.',             sector: 'Technology',     domain: 'datadoghq.com'    },
+  { ticker: 'CRWD',  name: 'CrowdStrike Holdings',     sector: 'Cybersecurity',  domain: 'crowdstrike.com'  },
+  { ticker: 'ZS',    name: 'Zscaler Inc.',             sector: 'Cybersecurity',  domain: 'zscaler.com'      },
+  { ticker: 'NET',   name: 'Cloudflare Inc.',          sector: 'Technology',     domain: 'cloudflare.com'   },
+  { ticker: 'MDB',   name: 'MongoDB Inc.',             sector: 'Technology',     domain: 'mongodb.com'      },
+  // AI / New tech
+  { ticker: 'CRWV',  name: 'CoreWeave Inc.',           sector: 'AI/Cloud',       domain: 'coreweave.com'    },
+  { ticker: 'SOUN',  name: 'SoundHound AI',            sector: 'AI',             domain: 'soundhound.com'   },
+  { ticker: 'AI',    name: 'C3.ai Inc.',               sector: 'AI',             domain: 'c3.ai'            },
+  { ticker: 'BBAI',  name: 'BigBear.ai Holdings',      sector: 'AI',             domain: 'bigbear.ai'       },
+  { ticker: 'IONQ',  name: 'IonQ Inc.',                sector: 'Quantum',        domain: 'ionq.com'         },
+  // Semiconductors
   { ticker: 'INTC',  name: 'Intel Corporation',        sector: 'Semiconductors', domain: 'intel.com'        },
   { ticker: 'AVGO',  name: 'Broadcom Inc.',            sector: 'Semiconductors', domain: 'broadcom.com'     },
   { ticker: 'ARM',   name: 'Arm Holdings',             sector: 'Semiconductors', domain: 'arm.com'          },
+  { ticker: 'QCOM',  name: 'Qualcomm Inc.',            sector: 'Semiconductors', domain: 'qualcomm.com'     },
+  { ticker: 'MU',    name: 'Micron Technology',        sector: 'Semiconductors', domain: 'micron.com'       },
+  { ticker: 'AMAT',  name: 'Applied Materials',        sector: 'Semiconductors', domain: 'appliedmaterials.com'},
+  { ticker: 'SMCI',  name: 'Super Micro Computer',     sector: 'Technology',     domain: 'supermicro.com'   },
+  // Consumer / Retail
   { ticker: 'WMT',   name: 'Walmart Inc.',             sector: 'Retail',         domain: 'walmart.com'      },
+  { ticker: 'COST',  name: 'Costco Wholesale',         sector: 'Retail',         domain: 'costco.com'       },
+  { ticker: 'TGT',   name: 'Target Corporation',       sector: 'Retail',         domain: 'target.com'       },
   { ticker: 'NKE',   name: 'Nike Inc.',                sector: 'Consumer',       domain: 'nike.com'         },
+  { ticker: 'SBUX',  name: 'Starbucks Corporation',    sector: 'Consumer',       domain: 'starbucks.com'    },
+  { ticker: 'MCD',   name: "McDonald's Corporation",   sector: 'Consumer',       domain: 'mcdonalds.com'    },
+  // Healthcare
   { ticker: 'JNJ',   name: 'Johnson & Johnson',        sector: 'Healthcare',     domain: 'jnj.com'          },
   { ticker: 'PFE',   name: 'Pfizer Inc.',              sector: 'Healthcare',     domain: 'pfizer.com'       },
   { ticker: 'LLY',   name: 'Eli Lilly',                sector: 'Healthcare',     domain: 'lilly.com'        },
-  { ticker: 'XOM',   name: 'Exxon Mobil',              sector: 'Energy',         domain: 'exxonmobil.com'   },
-  { ticker: 'UBER',  name: 'Uber Technologies',        sector: 'Transportation', domain: 'uber.com'         },
-  { ticker: 'SHOP',  name: 'Shopify Inc.',             sector: 'E-Commerce',     domain: 'shopify.com'      },
-  { ticker: 'PYPL',  name: 'PayPal Holdings',          sector: 'Finance',        domain: 'paypal.com'       },
-  { ticker: 'BA',    name: 'Boeing Company',           sector: 'Aerospace',      domain: 'boeing.com'       },
-  { ticker: 'HOOD',  name: 'Robinhood Markets',        sector: 'Finance',        domain: 'robinhood.com'    },
-  { ticker: 'RIVN',  name: 'Rivian Automotive',        sector: 'Automotive',     domain: 'rivian.com'       },
-  { ticker: 'SMCI',  name: 'Super Micro Computer',     sector: 'Technology',     domain: 'supermicro.com'   },
-  { ticker: 'QCOM',  name: 'Qualcomm Inc.',            sector: 'Semiconductors', domain: 'qualcomm.com'     },
-  { ticker: 'NOW',   name: 'ServiceNow Inc.',          sector: 'Technology',     domain: 'servicenow.com'   },
   { ticker: 'ABBV',  name: 'AbbVie Inc.',              sector: 'Healthcare',     domain: 'abbvie.com'       },
+  { ticker: 'UNH',   name: 'UnitedHealth Group',       sector: 'Healthcare',     domain: 'unitedhealthgroup.com'},
+  // Energy / Industrial
+  { ticker: 'XOM',   name: 'Exxon Mobil',              sector: 'Energy',         domain: 'exxonmobil.com'   },
+  { ticker: 'CVX',   name: 'Chevron Corporation',      sector: 'Energy',         domain: 'chevron.com'      },
+  { ticker: 'BA',    name: 'Boeing Company',           sector: 'Aerospace',      domain: 'boeing.com'       },
+  { ticker: 'RTX',   name: 'RTX Corporation',          sector: 'Aerospace',      domain: 'rtx.com'          },
+  // Transport / Mobility
+  { ticker: 'UBER',  name: 'Uber Technologies',        sector: 'Transportation', domain: 'uber.com'         },
+  { ticker: 'LYFT',  name: 'Lyft Inc.',                sector: 'Transportation', domain: 'lyft.com'         },
+  { ticker: 'RIVN',  name: 'Rivian Automotive',        sector: 'Automotive',     domain: 'rivian.com'       },
+  { ticker: 'LCID',  name: 'Lucid Group',              sector: 'Automotive',     domain: 'lucidmotors.com'  },
+  // E-Commerce / Fintech
+  { ticker: 'SHOP',  name: 'Shopify Inc.',             sector: 'E-Commerce',     domain: 'shopify.com'      },
+  { ticker: 'MELI',  name: 'MercadoLibre Inc.',        sector: 'E-Commerce',     domain: 'mercadolibre.com' },
+  { ticker: 'AFRM',  name: 'Affirm Holdings',          sector: 'Fintech',        domain: 'affirm.com'       },
+  { ticker: 'SQ',    name: 'Block Inc.',               sector: 'Fintech',        domain: 'block.xyz'        },
+  // Media / Entertainment
+  { ticker: 'DIS',   name: 'Walt Disney Company',      sector: 'Entertainment',  domain: 'disney.com'       },
+  { ticker: 'SPOT',  name: 'Spotify Technology',       sector: 'Entertainment',  domain: 'spotify.com'      },
+  { ticker: 'RBLX',  name: 'Roblox Corporation',       sector: 'Gaming',         domain: 'roblox.com'       },
+  { ticker: 'TTWO',  name: 'Take-Two Interactive',     sector: 'Gaming',         domain: 'take2games.com'   },
 ]
 
 export function domainForTicker(ticker) {

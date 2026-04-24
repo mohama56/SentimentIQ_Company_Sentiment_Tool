@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useWindowWidth } from '../hooks/useWindowWidth.js'
+import { TICKERS, logoUrl } from './SearchBar.jsx'
 
 const BASE = (import.meta.env.VITE_API_URL ?? '') + '/api/v1'
 
@@ -132,12 +133,56 @@ function WatchlistCard({ item, onRemove, onAnalyse }) {
 }
 
 export default function WatchlistPanel({ onAnalyse }) {
-  const [items, setItems]       = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [input, setInput]       = useState('')
-  const [adding, setAdding]     = useState(false)
-  const [error, setError]       = useState('')
-  const isMobile = useWindowWidth() < 768
+  const [items, setItems]         = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [input, setInput]         = useState('')
+  const [adding, setAdding]       = useState(false)
+  const [error, setError]         = useState('')
+  const [dropOpen, setDropOpen]   = useState(false)
+  const [highlighted, setHighlighted] = useState(-1)
+  const inputRef  = useRef(null)
+  const dropRef   = useRef(null)
+  const isMobile  = useWindowWidth() < 768
+
+  // Fuzzy match on ticker OR company name
+  const suggestions = input.trim().length > 0
+    ? TICKERS.filter(t =>
+        t.ticker.toLowerCase().startsWith(input.toLowerCase()) ||
+        t.name.toLowerCase().includes(input.toLowerCase()) ||
+        t.sector.toLowerCase().includes(input.toLowerCase())
+      ).slice(0, 7)
+    : []
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const fn = e => {
+      if (dropRef.current && !dropRef.current.contains(e.target) &&
+          inputRef.current && !inputRef.current.contains(e.target)) {
+        setDropOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
+  }, [])
+
+  function selectSuggestion(t) {
+    setInput(t.ticker)
+    setDropOpen(false)
+    setHighlighted(-1)
+    doAdd(t.ticker)
+  }
+
+  function handleKey(e) {
+    if (!dropOpen || suggestions.length === 0) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHighlighted(h => Math.min(h + 1, suggestions.length - 1)) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlighted(h => Math.max(h - 1, -1)) }
+    else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (highlighted >= 0 && suggestions[highlighted]) selectSuggestion(suggestions[highlighted])
+      else handleAdd()
+    }
+    else if (e.key === 'Escape') setDropOpen(false)
+  }
 
   const fetchWatchlist = useCallback(async () => {
     try {
@@ -153,22 +198,23 @@ export default function WatchlistPanel({ onAnalyse }) {
 
   useEffect(() => { fetchWatchlist() }, [fetchWatchlist])
 
-  const handleAdd = async () => {
-    const ticker = input.trim().toUpperCase()
-    if (!ticker) return
+  const doAdd = async (ticker) => {
+    const t = ticker.trim().toUpperCase()
+    if (!t) return
     setAdding(true)
     setError('')
     try {
       const res = await fetch(`${BASE}/watchlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker }),
+        body: JSON.stringify({ ticker: t }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         setError(body.detail || 'Failed to add ticker.')
       } else {
         setInput('')
+        setDropOpen(false)
         await fetchWatchlist()
       }
     } catch {
@@ -177,6 +223,8 @@ export default function WatchlistPanel({ onAnalyse }) {
       setAdding(false)
     }
   }
+
+  const handleAdd = () => doAdd(input)
 
   const handleRemove = async (ticker) => {
     await fetch(`${BASE}/watchlist/${ticker}`, { method: 'DELETE' })
@@ -204,41 +252,89 @@ export default function WatchlistPanel({ onAnalyse }) {
           </div>
         </div>
 
-        {/* Add ticker */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-          <input
-            value={input}
-            onChange={e => { setInput(e.target.value.toUpperCase()); setError('') }}
-            onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            placeholder="Add ticker e.g. AAPL"
-            maxLength={8}
-            style={{
-              flex: 1,
-              background: 'rgba(255,255,255,0.04)',
-              border: `1px solid ${error ? 'var(--red)' : 'var(--border)'}`,
-              borderRadius: 10, padding: '10px 14px',
-              color: 'var(--text)', fontSize: 13,
-              fontFamily: 'Space Mono, monospace',
-              outline: 'none',
-            }}
-          />
-          <button
-            onClick={handleAdd}
-            disabled={adding || !input.trim()}
-            style={{
-              padding: '10px 20px', fontSize: 13, fontWeight: 700,
-              background: 'linear-gradient(135deg, var(--blue), var(--cyan))',
-              border: 'none', borderRadius: 10,
-              color: 'white', cursor: adding ? 'wait' : 'pointer',
-              opacity: adding || !input.trim() ? 0.6 : 1,
-              transition: 'opacity 0.15s',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {adding ? 'Adding…' : '+ Add'}
-          </button>
+        {/* Add ticker — autocomplete */}
+        <div style={{ position: 'relative', marginTop: 16 }}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={e => { setInput(e.target.value); setDropOpen(true); setHighlighted(-1); setError('') }}
+                onFocus={() => setDropOpen(true)}
+                onKeyDown={handleKey}
+                placeholder="Search by company name or ticker — CoreWeave, Apple, TSLA…"
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${error ? 'var(--red)' : dropOpen && suggestions.length ? 'rgba(99,126,255,0.5)' : 'var(--border)'}`,
+                  borderRadius: dropOpen && suggestions.length ? '10px 10px 0 0' : 10,
+                  padding: '11px 14px',
+                  color: 'var(--text)', fontSize: 13,
+                  outline: 'none', transition: 'border-color 0.15s',
+                }}
+              />
+              {/* Dropdown */}
+              {dropOpen && suggestions.length > 0 && (
+                <div ref={dropRef} style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
+                  background: 'rgba(10,17,40,0.98)',
+                  border: '1px solid rgba(99,126,255,0.4)',
+                  borderTop: 'none',
+                  borderRadius: '0 0 10px 10px',
+                  overflow: 'hidden',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
+                }}>
+                  {suggestions.map((t, i) => (
+                    <div
+                      key={t.ticker}
+                      onMouseDown={() => selectSuggestion(t)}
+                      onMouseEnter={() => setHighlighted(i)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 16px', cursor: 'pointer',
+                        background: i === highlighted ? 'rgba(99,126,255,0.12)' : 'transparent',
+                        borderBottom: i < suggestions.length - 1 ? '1px solid var(--border)' : 'none',
+                        transition: 'background 0.1s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <img
+                          src={logoUrl(t.domain)}
+                          alt="" width={20} height={20}
+                          style={{ borderRadius: 5, objectFit: 'contain', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }}
+                          onError={e => { e.currentTarget.style.display = 'none' }}
+                        />
+                        <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 12, fontWeight: 700, color: 'var(--cyan)', minWidth: 48 }}>
+                          {t.ticker}
+                        </span>
+                        <span style={{ fontSize: 12, color: 'var(--text)' }}>{t.name}</span>
+                      </div>
+                      <span style={{ fontSize: 10, color: 'var(--text-3)', padding: '2px 8px', border: '1px solid var(--border)', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                        {t.sector}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleAdd}
+              disabled={adding || !input.trim()}
+              style={{
+                padding: '11px 20px', fontSize: 13, fontWeight: 700,
+                background: 'linear-gradient(135deg, var(--blue), var(--cyan))',
+                border: 'none', borderRadius: 10,
+                color: 'white', cursor: adding ? 'wait' : 'pointer',
+                opacity: adding || !input.trim() ? 0.6 : 1,
+                transition: 'opacity 0.15s', whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              {adding ? 'Adding…' : '+ Add'}
+            </button>
+          </div>
+          {error && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 6 }}>{error}</div>}
         </div>
-        {error && <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 8 }}>{error}</div>}
       </div>
 
       {/* Cards grid */}
