@@ -4,8 +4,9 @@ Entry point: starts the API server and registers all routers.
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from routers import company, sentiment, topics, financials, temperature
 
 
@@ -34,14 +35,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Allow the React frontend (running on localhost:5173 or :3000) to call this API
+# CORS — allow all origins. Must be added BEFORE other middleware.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+# Catch-all exception handler — ensures CORS headers are always present
+# even when the request crashes before FastAPI can process the response.
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {str(exc)}"},
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
 
 # Register all route groups
 app.include_router(company.router,     prefix="/api/v1", tags=["Company"])

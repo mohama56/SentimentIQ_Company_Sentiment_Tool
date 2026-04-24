@@ -368,8 +368,8 @@ def _engagement_weight(upvotes: int, comments: int) -> float:
 # Main pipeline: process all documents for a company
 # ─────────────────────────────────────────────────────────────────────────────
 
-MAX_DOCS_FOR_NLP    = 30   # cap total docs fed into the pipeline
-MAX_DOCS_FOR_ASPECT = 8    # DeBERTa is slow — only run on top N docs
+MAX_DOCS_FOR_NLP    = 20   # cap total docs fed into the pipeline
+MAX_DOCS_FOR_ASPECT = 4    # DeBERTa is slow — only run on top N docs
 
 
 def process_documents(documents: list[UnifiedDocument]) -> list[ProcessedSignal]:

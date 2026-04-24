@@ -51,7 +51,7 @@ class Config:
     # ── Data fetch limits ──────────────────────────────────────────────────────
     REDDIT_POST_LIMIT:   int = 50
     NEWS_ARTICLE_LIMIT:  int = 30
-    BERTOPIC_MIN_DOCS:   int = 5    # min documents before BERTopic runs
+    BERTOPIC_MIN_DOCS:   int = 999  # effectively disabled on Railway — keyword fallback is instant
 
 
 settings = Config()
