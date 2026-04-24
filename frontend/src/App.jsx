@@ -7,13 +7,11 @@ import { EmptyState } from './components/EmptyState.jsx'
 import { LoadingSkeleton } from './components/LoadingSkeleton.jsx'
 import { ErrorState } from './components/ErrorState.jsx'
 import Dashboard from './components/Dashboard.jsx'
+import WatchlistPanel from './components/WatchlistPanel.jsx'
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', active: true },
-  { label: 'Sentiment'  },
-  { label: 'Financials' },
-  { label: 'Signals'    },
-  { label: 'History'    },
+  { label: 'Dashboard' },
+  { label: 'Watchlist' },
 ]
 
 const MODEL_TAGS = [
@@ -36,27 +34,9 @@ function NavIcon({ label }) {
         <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
       </svg>
     ),
-    Sentiment: (
+    Watchlist: (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2" strokeLinecap="round"/>
-        <line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
-      </svg>
-    ),
-    Financials: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-      </svg>
-    ),
-    Signals: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
-    ),
-    History: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <polyline points="12 8 12 12 14 14"/>
-        <path d="M3.05 11a9 9 0 1 0 .5-4H1"/>
-        <polyline points="1 3 1 7 5 7"/>
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
       </svg>
     ),
   }
@@ -68,8 +48,15 @@ export default function App() {
   const handleRefresh = useCallback(() => { if (ticker) analyze(ticker) }, [ticker, analyze])
   const [mkt, setMkt] = useState(marketStatus())
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeView, setActiveView] = useState('Dashboard')
   const width = useWindowWidth()
   const isMobile = width < 768
+
+  const handleWatchlistAnalyse = useCallback((t) => {
+    setActiveView('Dashboard')
+    analyze(t)
+    if (isMobile) setSidebarOpen(false)
+  }, [analyze, isMobile])
 
   useEffect(() => {
     const id = setInterval(() => setMkt(marketStatus()), 60_000)
@@ -138,30 +125,33 @@ export default function App() {
 
         {/* Nav */}
         <nav style={{ padding: '16px 12px', flex: 1 }}>
-          {NAV_ITEMS.map(item => (
-            <div key={item.label} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px',
-              borderRadius: 10,
-              marginBottom: 2,
-              cursor: 'pointer',
-              background: item.active ? 'rgba(99,126,255,0.15)' : 'transparent',
-              border: item.active ? '1px solid rgba(99,126,255,0.2)' : '1px solid transparent',
-              color: item.active ? 'var(--blue-light)' : 'var(--text-3)',
-              transition: 'all 0.15s',
-              boxShadow: item.active ? '0 0 12px rgba(99,126,255,0.1)' : 'none',
-            }}>
-              <NavIcon label={item.label} />
-              <span style={{ fontSize: 13, fontWeight: item.active ? 700 : 500 }}>{item.label}</span>
-              {item.active && (
-                <div style={{
-                  marginLeft: 'auto', width: 5, height: 5, borderRadius: '50%',
-                  background: 'var(--blue-light)',
-                  boxShadow: '0 0 6px var(--blue)',
-                }}/>
-              )}
-            </div>
-          ))}
+          {NAV_ITEMS.map(item => {
+            const isActive = activeView === item.label
+            return (
+              <div key={item.label} onClick={() => { setActiveView(item.label); if (isMobile) setSidebarOpen(false) }} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px',
+                borderRadius: 10,
+                marginBottom: 2,
+                cursor: 'pointer',
+                background: isActive ? 'rgba(99,126,255,0.15)' : 'transparent',
+                border: isActive ? '1px solid rgba(99,126,255,0.2)' : '1px solid transparent',
+                color: isActive ? 'var(--blue-light)' : 'var(--text-3)',
+                transition: 'all 0.15s',
+                boxShadow: isActive ? '0 0 12px rgba(99,126,255,0.1)' : 'none',
+              }}>
+                <NavIcon label={item.label} />
+                <span style={{ fontSize: 13, fontWeight: isActive ? 700 : 500 }}>{item.label}</span>
+                {isActive && (
+                  <div style={{
+                    marginLeft: 'auto', width: 5, height: 5, borderRadius: '50%',
+                    background: 'var(--blue-light)',
+                    boxShadow: '0 0 6px var(--blue)',
+                  }}/>
+                )}
+              </div>
+            )
+          })}
         </nav>
 
         {/* Market status */}
@@ -267,13 +257,18 @@ export default function App() {
 
         {/* Page content */}
         <main style={{ flex: 1, padding: isMobile ? '16px 12px 60px' : '24px 28px 60px' }}>
-          <SearchBar onSearch={analyze} loading={loading} />
-
-          {status === 'idle'    && <EmptyState />}
-          {status === 'loading' && <LoadingSkeleton ticker={ticker} />}
-          {status === 'error'   && <ErrorState error={error} ticker={ticker} onRetry={handleRefresh} />}
-          {status === 'success' && data && (
-            <Dashboard data={data} onRefresh={handleRefresh} loading={loading} />
+          {activeView === 'Watchlist' ? (
+            <WatchlistPanel onAnalyse={handleWatchlistAnalyse} />
+          ) : (
+            <>
+              <SearchBar onSearch={analyze} loading={loading} />
+              {status === 'idle'    && <EmptyState />}
+              {status === 'loading' && <LoadingSkeleton ticker={ticker} />}
+              {status === 'error'   && <ErrorState error={error} ticker={ticker} onRetry={handleRefresh} />}
+              {status === 'success' && data && (
+                <Dashboard data={data} onRefresh={handleRefresh} loading={loading} />
+              )}
+            </>
           )}
         </main>
       </div>

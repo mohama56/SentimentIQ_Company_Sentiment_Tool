@@ -20,12 +20,6 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-# Tickers to auto-refresh daily. Add or remove as needed.
-WATCHLIST = [
-    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL",
-    "META", "TSLA", "JPM",  "NFLX", "AMD",
-]
-
 STARTUP_DELAY_SECONDS  = 90    # wait after boot before first run
 BETWEEN_TICKER_SECONDS = 30    # pause between tickers (API rate limit courtesy)
 REFRESH_INTERVAL_HOURS = 24    # full cycle runs once per day
@@ -109,10 +103,12 @@ async def run_scheduler() -> None:
     loop = asyncio.get_event_loop()
 
     while True:
+        from services.watchlist_store import get_watchlist
+        watchlist = get_watchlist()
         now = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-        logger.info(f"[scheduler] Daily refresh started at {now} — {len(WATCHLIST)} tickers")
+        logger.info(f"[scheduler] Daily refresh started at {now} — {len(watchlist)} tickers")
 
-        for ticker in WATCHLIST:
+        for ticker in watchlist:
             try:
                 # Run synchronous pipeline in a thread so we don't block the event loop
                 await loop.run_in_executor(None, _run_analysis, ticker)
@@ -122,5 +118,5 @@ async def run_scheduler() -> None:
             # Courtesy pause between tickers
             await asyncio.sleep(BETWEEN_TICKER_SECONDS)
 
-        logger.info(f"[scheduler] Daily refresh complete. Next run in {REFRESH_INTERVAL_HOURS}h")
+        logger.info(f"[scheduler] Daily refresh complete ({len(watchlist)} tickers). Next run in {REFRESH_INTERVAL_HOURS}h")
         await asyncio.sleep(REFRESH_INTERVAL_HOURS * 3600)
