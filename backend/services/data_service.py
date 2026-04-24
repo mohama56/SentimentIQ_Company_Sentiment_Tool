@@ -99,17 +99,11 @@ def fetch_reddit(ticker: str, company_name: str) -> list[UnifiedDocument]:
                 "restrict_sr": 1,
             }
 
-            with httpx.Client(timeout=15.0, headers=HEADERS, follow_redirects=True) as client:
+            with httpx.Client(timeout=8.0, headers=HEADERS, follow_redirects=True) as client:
                 resp = client.get(url, params=params)
 
-            time.sleep(1.0)
-
-            if resp.status_code == 429:
-                logger.warning(f"Reddit rate limited on r/{subreddit} — waiting 5s")
-                time.sleep(5.0)
-                continue
             if resp.status_code != 200:
-                logger.warning(f"Reddit r/{subreddit} returned {resp.status_code}")
+                logger.warning(f"Reddit r/{subreddit} returned {resp.status_code} — skipping")
                 continue
 
             posts = resp.json().get("data", {}).get("children", [])
@@ -516,7 +510,13 @@ def fetch_edgar(ticker: str) -> list[UnifiedDocument]:
     return docs
 
 
+_CIK_CACHE: dict[str, str] = {}   # in-memory cache — persists for the lifetime of the process
+
+
 def _get_cik(ticker: str) -> Optional[str]:
+    ticker = ticker.upper()
+    if ticker in _CIK_CACHE:
+        return _CIK_CACHE[ticker]
     try:
         with httpx.Client(timeout=10.0) as client:
             resp = client.get(
@@ -524,9 +524,12 @@ def _get_cik(ticker: str) -> Optional[str]:
                 headers={"User-Agent": "SentimentDashboard contact@example.com"},
             )
             resp.raise_for_status()
+        # Populate the full cache in one pass so future tickers are free
         for entry in resp.json().values():
-            if entry.get("ticker", "").upper() == ticker.upper():
-                return str(entry["cik_str"])
+            t = entry.get("ticker", "").upper()
+            if t:
+                _CIK_CACHE[t] = str(entry["cik_str"])
+        return _CIK_CACHE.get(ticker)
     except Exception as e:
         logger.error(f"CIK lookup failed for {ticker}: {e}")
     return None

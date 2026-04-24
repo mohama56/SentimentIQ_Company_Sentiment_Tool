@@ -368,35 +368,46 @@ def _engagement_weight(upvotes: int, comments: int) -> float:
 # Main pipeline: process all documents for a company
 # ─────────────────────────────────────────────────────────────────────────────
 
+MAX_DOCS_FOR_NLP    = 30   # cap total docs fed into the pipeline
+MAX_DOCS_FOR_ASPECT = 8    # DeBERTa is slow — only run on top N docs
+
+
 def process_documents(documents: list[UnifiedDocument]) -> list[ProcessedSignal]:
     """
     Run the full NLP pipeline on a list of normalised documents.
 
     For each document:
       1. VADER + FinBERT → ensemble score
-      2. Aspect classification
+      2. Aspect classification (only top MAX_DOCS_FOR_ASPECT by recency)
       3. Event detection
       4. Recency / engagement / credibility weights
 
     Returns a list of ProcessedSignal ready for the scoring engine.
     """
+    # Sort by recency and cap total docs to keep latency predictable
+    sorted_docs = sorted(documents, key=lambda d: d.hours_ago)
+    capped = sorted_docs[:MAX_DOCS_FOR_NLP]
+
+    # Pre-compute which docs get expensive aspect classification
+    aspect_set = {id(d) for d in capped[:MAX_DOCS_FOR_ASPECT]}
+
     signals: list[ProcessedSignal] = []
 
-    for doc in documents:
+    for doc in capped:
         try:
             # ── Sentiment ───────────────────────────────────────────────────
             vader, finbert, ensemble = _ensemble_score(doc)
             label = _label_from_score(ensemble)
 
-            # ── Aspects ─────────────────────────────────────────────────────
-            aspects = _compute_aspects(doc.text)
+            # ── Aspects (only for top recent docs to avoid timeout) ──────────
+            aspects = _compute_aspects(doc.text) if id(doc) in aspect_set else AspectScores()
 
             # ── Events ──────────────────────────────────────────────────────
             events = detect_events(doc.text)
 
             # ── Weights ─────────────────────────────────────────────────────
-            recency    = _recency_weight(doc.hours_ago)
-            engagement = _engagement_weight(doc.upvotes, doc.comment_count)
+            recency     = _recency_weight(doc.hours_ago)
+            engagement  = _engagement_weight(doc.upvotes, doc.comment_count)
             credibility = SOURCE_CREDIBILITY.get(doc.source, 0.7)
 
             signals.append(ProcessedSignal(
@@ -423,7 +434,7 @@ def process_documents(documents: list[UnifiedDocument]) -> list[ProcessedSignal]
             logger.error(f"NLP pipeline failed for doc {doc.id}: {e}")
             continue
 
-    logger.info(f"NLP: processed {len(signals)} signals")
+    logger.info(f"NLP: processed {len(signals)}/{len(documents)} signals (capped at {MAX_DOCS_FOR_NLP})")
     return signals
 
 
@@ -450,9 +461,8 @@ def extract_topics(documents: list[UnifiedDocument]) -> tuple[list[str], list[di
 
     try:
         from bertopic import BERTopic
-        from sentence_transformers import SentenceTransformer
 
-        sbert = SentenceTransformer(settings.SBERT_MODEL)
+        sbert = _get_sbert()   # reuse cached model — don't reload
 
         # min_topic_size controls granularity; smaller = more topics
         topic_model = BERTopic(
