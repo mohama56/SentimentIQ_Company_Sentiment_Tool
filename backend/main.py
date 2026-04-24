@@ -7,14 +7,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from routers import company, sentiment, topics, financials, temperature
+from routers import company, sentiment, topics, financials, temperature, watchlist
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Pre-load heavy NLP models at startup so first request isn't slow
+    import asyncio
     import logging
     logger = logging.getLogger(__name__)
+
+    # Pre-load heavy NLP models at startup so first request isn't slow
     try:
         logger.info("Pre-loading NLP models...")
         from services.nlp_service import _get_vader, _get_finbert, _get_sbert, _get_zero_shot
@@ -25,7 +27,20 @@ async def lifespan(app: FastAPI):
         logger.info("NLP models ready.")
     except Exception as e:
         logger.warning(f"Model pre-load failed: {e}")
+
+    # Start background scheduler — refreshes watchlist tickers once per day
+    from services.scheduler_service import run_scheduler
+    scheduler_task = asyncio.create_task(run_scheduler())
+    logger.info("Background scheduler started.")
+
     yield
+
+    # Clean shutdown
+    scheduler_task.cancel()
+    try:
+        await scheduler_task
+    except asyncio.CancelledError:
+        pass
 
 
 app = FastAPI(
@@ -61,6 +76,7 @@ app.include_router(sentiment.router,   prefix="/api/v1", tags=["Sentiment"])
 app.include_router(topics.router,      prefix="/api/v1", tags=["Topics"])
 app.include_router(financials.router,  prefix="/api/v1", tags=["Financials"])
 app.include_router(temperature.router, prefix="/api/v1", tags=["Temperature Score"])
+app.include_router(watchlist.router,   prefix="/api/v1", tags=["Watchlist"])
 
 
 @app.get("/api/v1/health")
