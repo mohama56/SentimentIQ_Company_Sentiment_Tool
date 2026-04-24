@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useCompanyAnalysis } from './hooks/useCompanyAnalysis.js'
 import { marketStatus } from './utils/format.js'
+import { useWindowWidth } from './hooks/useWindowWidth.js'
 import SearchBar from './components/SearchBar.jsx'
 import { EmptyState } from './components/EmptyState.jsx'
 import { LoadingSkeleton } from './components/LoadingSkeleton.jsx'
@@ -66,14 +67,30 @@ export default function App() {
   const { data, loading, error, ticker, status, analyze } = useCompanyAnalysis()
   const handleRefresh = useCallback(() => { if (ticker) analyze(ticker) }, [ticker, analyze])
   const [mkt, setMkt] = useState(marketStatus())
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const width = useWindowWidth()
+  const isMobile = width < 768
 
   useEffect(() => {
     const id = setInterval(() => setMkt(marketStatus()), 60_000)
     return () => clearInterval(id)
   }, [])
 
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    if (!isMobile) setSidebarOpen(false)
+  }, [isMobile])
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+
+      {/* ── Mobile overlay ── */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{
+          position: 'fixed', inset: 0, zIndex: 49,
+          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)',
+        }}/>
+      )}
 
       {/* ── Sidebar ── */}
       <aside style={{
@@ -84,10 +101,13 @@ export default function App() {
         display: 'flex',
         flexDirection: 'column',
         padding: '0',
-        position: 'sticky',
+        position: isMobile ? 'fixed' : 'sticky',
         top: 0,
+        left: isMobile ? (sidebarOpen ? 0 : -220) : 0,
         height: '100vh',
         backdropFilter: 'blur(20px)',
+        zIndex: isMobile ? 50 : 'auto',
+        transition: 'left 0.25s ease',
       }}>
         {/* Logo */}
         <div style={{ padding: '20px 20px 18px', borderBottom: '1px solid var(--border)' }}>
@@ -198,13 +218,27 @@ export default function App() {
           height: 52,
           borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center',
-          padding: '0 28px',
+          padding: isMobile ? '0 16px' : '0 28px',
           background: 'rgba(6,11,24,0.85)',
           backdropFilter: 'blur(20px)',
           position: 'sticky', top: 0, zIndex: 40,
           justifyContent: 'space-between',
+          gap: 12,
         }}>
-          <div style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500 }}>
+          {/* Hamburger on mobile */}
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(o => !o)} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-3)', padding: 4, flexShrink: 0,
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+          )}
+          <div style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {status === 'success' && data ? (
               <span>
                 <span style={{ color: 'var(--blue-light)', fontWeight: 700 }}>{data.company}</span>
@@ -232,7 +266,7 @@ export default function App() {
         </header>
 
         {/* Page content */}
-        <main style={{ flex: 1, padding: '24px 28px 60px' }}>
+        <main style={{ flex: 1, padding: isMobile ? '16px 12px 60px' : '24px 28px 60px' }}>
           <SearchBar onSearch={analyze} loading={loading} />
 
           {status === 'idle'    && <EmptyState />}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { logoUrl, domainForTicker } from './SearchBar.jsx'
+import { useWindowWidth } from '../hooks/useWindowWidth.js'
 import {
   scoreColor, scoreLabel, scoreZone, pillClass, formatLabel,
   formatRevenue, formatPct, timeAgo, truncate, eventPillClass,
@@ -123,13 +124,14 @@ export default function Dashboard({ data, onRefresh, loading }) {
   } = data
 
   const color = scoreColor(temperature_score)
+  const isMobile = useWindowWidth() < 768
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
       {/* ── Company header ── */}
-      <div className="card" style={{ padding: '20px 28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="card" style={{ padding: isMobile ? '16px' : '20px 28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {/* Company icon */}
             <div style={{
@@ -206,7 +208,7 @@ export default function Dashboard({ data, onRefresh, loading }) {
       </div>
 
       {/* ── Main row: Gauge + Stats + Trend ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '260px 1fr', gap: 18 }}>
 
         {/* Gauge card */}
         <div className="card fade-up delay-1" style={{ padding: '24px 20px', textAlign: 'center' }}>
@@ -262,7 +264,7 @@ export default function Dashboard({ data, onRefresh, loading }) {
         {/* Right column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* KPI row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(3,1fr)', gap: 14 }}>
             <KpiCard label="Signal Volume" value={signal_count} sub="deduplicated" color="var(--blue-light)" delay="delay-1"/>
             <KpiCard
               label="Event Detection"
@@ -304,15 +306,15 @@ export default function Dashboard({ data, onRefresh, loading }) {
       <SourceBreakdownChart sourceBreakdown={source_breakdown} />
 
       {/* ── Aspects + Score explanation ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 18 }}>
         <AspectCard aspects={aspect_breakdown} />
         <ExplanationCard explanation={score_explanation} eventFlags={event_flags} eventAdjustment={event_adjustment} />
       </div>
 
       {/* ── Topics + Financials ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 18 }}>
         <TopicsCard topics={top_themes} />
-        <FinancialsCard financials={financials} />
+        <FinancialsCard financials={financials} isMobile={isMobile} />
       </div>
 
       {/* ── Evidence ── */}
@@ -465,7 +467,7 @@ function TopicsCard({ topics = [] }) {
 }
 
 // ── Financials Card ──
-function FinancialsCard({ financials }) {
+function FinancialsCard({ financials, isMobile = false }) {
   if (!financials?.quarters?.length) return (
     <div className="card fade-up delay-4" style={{ padding: '22px 24px' }}>
       <div className="label" style={{ marginBottom: 14 }}>Quarterly Financials</div>
@@ -497,8 +499,8 @@ function FinancialsCard({ financials }) {
       </div>
 
       {/* Header */}
-      <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr 84px 52px 56px', gap: 10, paddingBottom: 10, marginBottom: 6, borderBottom: '1px solid var(--border)' }}>
-        {['Quarter', '', 'Revenue', 'EPS', 'Margin'].map((h, i) => (
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '70px 1fr 70px' : '90px 1fr 84px 52px 56px', gap: 10, paddingBottom: 10, marginBottom: 6, borderBottom: '1px solid var(--border)' }}>
+        {(isMobile ? ['Quarter', '', 'Revenue'] : ['Quarter', '', 'Revenue', 'EPS', 'Margin']).map((h, i) => (
           <span key={i} style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: i > 1 ? 'right' : 'left' }}>{h}</span>
         ))}
       </div>
@@ -508,9 +510,9 @@ function FinancialsCard({ financials }) {
         const barW   = maxRev > 0 ? (revenue_bn[i] / maxRev) * 100 : 0
         return (
           <div key={q} style={{
-            display: 'grid', gridTemplateColumns: '90px 1fr 84px 52px 56px',
+            display: 'grid', gridTemplateColumns: isMobile ? '70px 1fr 70px' : '90px 1fr 84px 52px 56px',
             alignItems: 'center', gap: 10,
-            padding: '10px 14px', marginBottom: 6,
+            padding: isMobile ? '8px 10px' : '10px 14px', marginBottom: 6,
             background: latest ? 'rgba(0,245,160,0.04)' : 'transparent',
             borderRadius: 10,
             border: latest ? '1px solid rgba(0,245,160,0.15)' : '1px solid transparent',
@@ -531,12 +533,12 @@ function FinancialsCard({ financials }) {
             <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 13, fontWeight: 700, color: latest ? 'var(--text)' : 'var(--text-2)', textAlign: 'right' }}>
               {formatRevenue(revenue_bn[i])}
             </span>
-            <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 12, color: 'var(--text-2)', textAlign: 'right' }}>
+            {!isMobile && <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 12, color: 'var(--text-2)', textAlign: 'right' }}>
               ${eps[i]?.toFixed(2)}
-            </span>
-            <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 12, color: 'var(--text-3)', textAlign: 'right' }}>
+            </span>}
+            {!isMobile && <span style={{ fontFamily: 'Space Mono, monospace', fontSize: 12, color: 'var(--text-3)', textAlign: 'right' }}>
               {formatPct(net_margin[i])}
-            </span>
+            </span>}
           </div>
         )
       })}
