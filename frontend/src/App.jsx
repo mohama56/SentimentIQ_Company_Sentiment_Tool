@@ -98,25 +98,57 @@ export default function App() {
       }}>
         {/* Logo */}
         <div style={{ padding: '20px 20px 18px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+
+            {/* Icon mark */}
             <div style={{
-              width: 34, height: 34,
-              background: 'linear-gradient(135deg, var(--blue), var(--cyan))',
-              borderRadius: 10,
+              width: 38, height: 38,
+              background: 'linear-gradient(145deg, #6366f1 0%, #4338ca 45%, #0ea5e9 100%)',
+              borderRadius: 11,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 16px rgba(99,126,255,0.4)',
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 4px 24px rgba(99,102,241,0.55)',
               flexShrink: 0,
+              position: 'relative',
+              overflow: 'hidden',
             }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-                <polyline points="16 7 22 7 22 13"/>
+              {/* Glass sheen */}
+              <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: '52%',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 100%)',
+                borderRadius: '11px 11px 60% 60%',
+                pointerEvents: 'none',
+              }}/>
+              {/* Custom SVG mark — brain arch + sentiment pulse */}
+              <svg width="22" height="20" viewBox="0 0 26 22" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                {/* Brain arch */}
+                <path d="M5 13 C5 7 8.5 3 13 3 C17.5 3 21 7 21 13" stroke="white" strokeWidth="2" strokeOpacity="0.45"/>
+                {/* Sentiment pulse line */}
+                <path d="M2 13 L5 13 L7.5 7.5 L10.5 18 L13 9.5 L15.5 15.5 L18 11.5 L21 13 L24 13" stroke="white" strokeWidth="2.2" strokeOpacity="1"/>
+                {/* Baseline */}
+                <line x1="5" y1="19" x2="21" y2="19" stroke="white" strokeWidth="1.5" strokeOpacity="0.3"/>
               </svg>
             </div>
+
+            {/* Wordmark */}
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.01em' }}>
-                SentimentIQ
+              <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+                <span style={{ color: 'var(--text)' }}>Sentiment</span>
+                <span style={{
+                  background: 'linear-gradient(90deg, #818cf8, #38bdf8)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>IQ</span>
               </div>
-              <div style={{ fontSize: 9, color: 'var(--text-3)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <div style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
+                textTransform: 'uppercase', marginTop: 3,
+                color: 'transparent',
+                background: 'linear-gradient(90deg, rgba(129,140,248,0.7), rgba(56,189,248,0.5))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>
                 Intelligence Platform
               </div>
             </div>
@@ -228,7 +260,7 @@ export default function App() {
               </svg>
             </button>
           )}
-          <div style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 13, fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {status === 'success' && data ? (
               <span>
                 <span style={{ color: 'var(--blue-light)', fontWeight: 700 }}>{data.company}</span>
@@ -238,7 +270,22 @@ export default function App() {
                 </span>
               </span>
             ) : (
-              <span style={{ color: 'var(--text-3)' }}>SentimentIQ Dashboard</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <span style={{
+                  fontWeight: 800, fontSize: 13, letterSpacing: '-0.01em',
+                  background: 'linear-gradient(90deg, #818cf8, #38bdf8)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>SentimentIQ</span>
+                <span style={{
+                  fontSize: 10, fontWeight: 600, color: 'var(--text-3)',
+                  padding: '2px 8px', border: '1px solid var(--border)',
+                  borderRadius: 20, letterSpacing: '0.04em',
+                }}>
+                  {activeView === 'Watchlist' ? 'Watchlist' : 'Dashboard'}
+                </span>
+              </span>
             )}
           </div>
 
