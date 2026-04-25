@@ -255,7 +255,7 @@ function WatchlistCard({ item, onRemove, onAnalyse, isRefreshing = false }) {
           Analyse now
         </button>
         <button
-          onClick={async () => { setRemoving(true); await onRemove(item.ticker) }}
+          onClick={async () => { setRemoving(true); await onRemove(item.ticker, () => setRemoving(false)) }}
           disabled={removing}
           style={{
             padding: '10px 18px', fontSize: 11, fontWeight: 700,
@@ -498,7 +498,16 @@ export default function WatchlistPanel({ onAnalyse }) {
   }
 
   const handleAdd    = () => doAdd(input)
-  const handleRemove = async t => { await fetch(`${BASE}/watchlist/${t}`, { method: 'DELETE' }); await fetchWatchlist() }
+  const handleRemove = async (t, resetRemoving) => {
+    try {
+      const res = await fetch(`${BASE}/watchlist/${t}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await fetchWatchlist()
+    } catch {
+      setError(`Could not remove ${t}. Check your connection.`)
+      resetRemoving()   // un-stick the button on the card
+    }
+  }
 
   /* ── Banner state ────────────────────────────────────────────────────────── */
   const isAutoRefreshing  = refreshingSet.size > 0

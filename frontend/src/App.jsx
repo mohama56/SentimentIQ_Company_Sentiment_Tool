@@ -98,7 +98,7 @@ export default function App() {
       }}>
         {/* Logo */}
         <div style={{ padding: '22px 20px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div onClick={() => setActiveView('Dashboard')} style={{ cursor: 'pointer' }}>
+          <div onClick={() => { setActiveView('Dashboard'); if (isMobile) setSidebarOpen(false) }} style={{ cursor: 'pointer' }}>
             {/* Wordmark */}
             <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>
               <span style={{ color: '#e2e8f0' }}>Sentiment</span>
