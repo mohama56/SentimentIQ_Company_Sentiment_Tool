@@ -10,32 +10,33 @@ export function EmptyState() {
 
   return (
     <div style={{ maxWidth: 640, margin: '60px auto', textAlign: 'center' }}>
-      {/* Animated orb */}
-      <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 32px' }}>
+
+      {/* Wordmark hero */}
+      <div style={{ marginBottom: 32 }}>
         <div style={{
-          position: 'absolute', inset: 0,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, rgba(99,126,255,0.3), rgba(6,214,224,0.3))',
-          animation: 'pulse-glow 3s infinite',
-        }}/>
-        <div style={{
-          position: 'absolute', inset: 8,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--blue), var(--cyan))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 30px rgba(99,126,255,0.5)',
+          fontSize: 42, fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1,
+          marginBottom: 16,
         }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-            <path d="M3 3v18h18" strokeLinecap="round"/>
-            <path d="M7 16l4-4 4 4 5-5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <span style={{ color: '#e2e8f0' }}>Sentiment</span>
+          <span style={{
+            background: 'linear-gradient(90deg, #818cf8, #38bdf8)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>IQ</span>
         </div>
+        {/* Accent line */}
+        <div style={{
+          height: 2, width: 80, borderRadius: 2, margin: '0 auto',
+          background: 'linear-gradient(90deg, #6366f1, #38bdf8)',
+          opacity: 0.7,
+        }}/>
       </div>
 
-      <h2 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em', marginBottom: 12 }}>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em', marginBottom: 10 }}>
         Company Sentiment Intelligence
       </h2>
-      <p style={{ fontSize: 15, color: 'var(--text-3)', lineHeight: 1.8, marginBottom: 40, fontWeight: 400 }}>
+      <p style={{ fontSize: 14, color: 'var(--text-3)', lineHeight: 1.9, marginBottom: 40, fontWeight: 400, maxWidth: 480, margin: '0 auto 40px' }}>
         Real-time NLP sentiment scoring from Reddit, news, SEC filings, and financial data.
         Search any US-listed company to begin.
       </p>

@@ -97,60 +97,30 @@ export default function App() {
         transition: 'left 0.25s ease',
       }}>
         {/* Logo */}
-        <div style={{ padding: '20px 20px 18px', borderBottom: '1px solid var(--border)' }}>
-          <div onClick={() => setActiveView('Dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }}>
-
-            {/* Icon mark */}
-            <div style={{
-              width: 38, height: 38,
-              background: 'linear-gradient(145deg, #6366f1 0%, #4338ca 45%, #0ea5e9 100%)',
-              borderRadius: 11,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 4px 24px rgba(99,102,241,0.55)',
-              flexShrink: 0,
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              {/* Glass sheen */}
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: '52%',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 100%)',
-                borderRadius: '11px 11px 60% 60%',
-                pointerEvents: 'none',
-              }}/>
-              {/* Custom SVG mark — brain arch + sentiment pulse */}
-              <svg width="22" height="20" viewBox="0 0 26 22" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                {/* Brain arch */}
-                <path d="M5 13 C5 7 8.5 3 13 3 C17.5 3 21 7 21 13" stroke="white" strokeWidth="2" strokeOpacity="0.45"/>
-                {/* Sentiment pulse line */}
-                <path d="M2 13 L5 13 L7.5 7.5 L10.5 18 L13 9.5 L15.5 15.5 L18 11.5 L21 13 L24 13" stroke="white" strokeWidth="2.2" strokeOpacity="1"/>
-                {/* Baseline */}
-                <line x1="5" y1="19" x2="21" y2="19" stroke="white" strokeWidth="1.5" strokeOpacity="0.3"/>
-              </svg>
-            </div>
-
+        <div style={{ padding: '22px 20px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div onClick={() => setActiveView('Dashboard')} style={{ cursor: 'pointer' }}>
             {/* Wordmark */}
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-                <span style={{ color: 'var(--text)' }}>Sentiment</span>
-                <span style={{
-                  background: 'linear-gradient(90deg, #818cf8, #38bdf8)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>IQ</span>
-              </div>
-              <div style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
-                textTransform: 'uppercase', marginTop: 3,
-                color: 'transparent',
-                background: 'linear-gradient(90deg, rgba(129,140,248,0.7), rgba(56,189,248,0.5))',
+            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>
+              <span style={{ color: '#e2e8f0' }}>Sentiment</span>
+              <span style={{
+                background: 'linear-gradient(90deg, #818cf8, #38bdf8)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-              }}>
-                Intelligence Platform
-              </div>
+              }}>IQ</span>
+            </div>
+            {/* Gradient rule */}
+            <div style={{
+              height: 2, marginTop: 8, marginBottom: 7, borderRadius: 2,
+              background: 'linear-gradient(90deg, #6366f1 0%, #38bdf8 60%, transparent 100%)',
+              opacity: 0.6,
+            }}/>
+            {/* Subtitle */}
+            <div style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+              color: 'rgba(148,163,184,0.55)',
+            }}>
+              Intelligence Platform
             </div>
           </div>
         </div>
