@@ -18,8 +18,9 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-# Store history files next to the backend code
-HISTORY_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "history")
+# Use Railway persistent volume if available, otherwise fall back to local
+_BASE = os.getenv("PERSISTENT_DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data"))
+HISTORY_DIR = os.path.join(_BASE, "history")
 
 
 def _ensure_dir():

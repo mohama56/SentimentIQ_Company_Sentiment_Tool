@@ -11,7 +11,7 @@ import os
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR      = os.path.join(os.path.dirname(__file__), "..", "data")
+DATA_DIR      = os.getenv("PERSISTENT_DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data"))
 WATCHLIST_FILE = os.path.join(DATA_DIR, "watchlist.json")
 
 DEFAULTS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "JPM", "NFLX", "AMD"]
