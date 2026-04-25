@@ -168,8 +168,19 @@ export default function WatchlistPanel({ onAnalyse }) {
     if (!q) { setSuggestions([]); setDropOpen(false); return }
 
     const ql = q.toLowerCase()
-    // Match ticker prefix OR start of any word in the company name (not mid-word)
-    const wordMatch = (name) => name.toLowerCase().split(/\s+/).some(word => word.startsWith(ql))
+
+    // Split name into searchable tokens:
+    // handles spaces, dots, dashes, ampersands, slashes, and camelCase (JPMorgan → JP Morgan)
+    function tokenize(str) {
+      return str
+        .replace(/([a-z])([A-Z])/g, '$1 $2')   // camelCase split
+        .split(/[\s.\-&/,()]+/)                 // split on separators
+        .filter(Boolean)
+        .map(w => w.toLowerCase())
+    }
+
+    const wordMatch = (name) => tokenize(name).some(token => token.startsWith(ql))
+
     const local = TICKERS.filter(t =>
       t.ticker.toLowerCase().startsWith(ql) ||
       wordMatch(t.name) ||
@@ -181,7 +192,7 @@ export default function WatchlistPanel({ onAnalyse }) {
 
     // Debounced live search for anything not in local list
     clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(async () => {
+    debounceRef.current = setTimeout(async () => {  // 150ms — fast enough to feel live
       setSearching(true)
       try {
         const res  = await fetch(`${BASE}/search_tickers?q=${encodeURIComponent(q)}`)
@@ -199,7 +210,7 @@ export default function WatchlistPanel({ onAnalyse }) {
         if (merged.length) setDropOpen(true)
       } catch { /* keep local results */ }
       finally { setSearching(false) }
-    }, 300)
+    }, 150)
 
     return () => clearTimeout(debounceRef.current)
   }, [input])

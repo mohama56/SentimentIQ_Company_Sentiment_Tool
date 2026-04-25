@@ -102,8 +102,12 @@ export default function SearchBar({ onSearch, loading }) {
   const results = val.length > 0
     ? TICKERS.filter(t => {
         const vl = val.toLowerCase()
-        const wordMatch = t.name.toLowerCase().split(/\s+/).some(w => w.startsWith(vl))
-        return t.ticker.toLowerCase().startsWith(vl) || wordMatch
+        const tokens = t.name
+          .replace(/([a-z])([A-Z])/g, '$1 $2')
+          .split(/[\s.\-&/,()]+/)
+          .filter(Boolean)
+          .map(w => w.toLowerCase())
+        return t.ticker.toLowerCase().startsWith(vl) || tokens.some(tok => tok.startsWith(vl))
       }).slice(0, 6)
     : []
 
