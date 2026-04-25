@@ -6,6 +6,7 @@ GET /api/v1/search_company?ticker=TSLA
   This is the first call the UI makes to confirm the ticker is valid.
 """
 
+import httpx
 from fastapi import APIRouter, HTTPException, Query
 from models.schemas import CompanySearchResult
 from services.data_service import resolve_company
@@ -35,3 +36,33 @@ def search_company(ticker: str = Query(..., description="Stock ticker symbol, e.
         sector=result.get("sector"),
         description=result.get("description"),
     )
+
+
+@router.get("/search_tickers")
+def search_tickers(q: str = Query(..., min_length=1)):
+    """
+    Live company search — proxies Yahoo Finance autocomplete.
+    Returns matching tickers/names for any publicly traded company.
+    """
+    q = q.strip()
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            resp = client.get(
+                "https://query1.finance.yahoo.com/v1/finance/search",
+                params={"q": q, "quotesCount": 8, "newsCount": 0, "enableFuzzyQuery": True},
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+        quotes = resp.json().get("quotes", [])
+        results = [
+            {
+                "ticker": q["symbol"],
+                "name":   q.get("shortname") or q.get("longname") or q["symbol"],
+                "type":   q.get("quoteType", ""),
+                "exchange": q.get("exchDisp", ""),
+            }
+            for q in quotes
+            if q.get("symbol") and q.get("quoteType") in ("EQUITY", "ETF")
+        ]
+        return {"results": results}
+    except Exception as e:
+        return {"results": [], "error": str(e)}
