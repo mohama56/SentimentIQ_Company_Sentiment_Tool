@@ -239,19 +239,7 @@ export default function App() {
                   {data.computed_at ? ' · ' + new Date(data.computed_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
                 </span>
               </span>
-            ) : (
-              <span
-                onClick={() => setActiveView('Dashboard')}
-                style={{
-                  fontWeight: 900, fontSize: 15, letterSpacing: '-0.02em',
-                  background: 'linear-gradient(90deg, #c7d2fe, #7dd3fc)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  cursor: 'pointer',
-                }}
-              >SentimentIQ</span>
-            )}
+            ) : null}
           </div>
 
           {/* Market status indicator in header too */}
