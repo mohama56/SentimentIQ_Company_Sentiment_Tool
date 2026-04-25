@@ -240,26 +240,17 @@ export default function App() {
                 </span>
               </span>
             ) : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <span
-                  onClick={() => setActiveView('Dashboard')}
-                  style={{
-                    fontWeight: 800, fontSize: 13, letterSpacing: '-0.01em',
-                    background: 'linear-gradient(90deg, #818cf8, #38bdf8)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    cursor: 'pointer',
-                  }}
-                >SentimentIQ</span>
-                <span style={{
-                  fontSize: 10, fontWeight: 600, color: 'var(--text-3)',
-                  padding: '2px 8px', border: '1px solid var(--border)',
-                  borderRadius: 20, letterSpacing: '0.04em',
-                }}>
-                  {activeView === 'Watchlist' ? 'Watchlist' : 'Dashboard'}
-                </span>
-              </span>
+              <span
+                onClick={() => setActiveView('Dashboard')}
+                style={{
+                  fontWeight: 900, fontSize: 15, letterSpacing: '-0.02em',
+                  background: 'linear-gradient(90deg, #c7d2fe, #7dd3fc)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  cursor: 'pointer',
+                }}
+              >SentimentIQ</span>
             )}
           </div>
 
