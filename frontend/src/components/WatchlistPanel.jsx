@@ -167,11 +167,13 @@ export default function WatchlistPanel({ onAnalyse }) {
     const q = input.trim()
     if (!q) { setSuggestions([]); setDropOpen(false); return }
 
-    // Instant local matches from the curated list
+    const ql = q.toLowerCase()
+    // Match ticker prefix OR start of any word in the company name (not mid-word)
+    const wordMatch = (name) => name.toLowerCase().split(/\s+/).some(word => word.startsWith(ql))
     const local = TICKERS.filter(t =>
-      t.ticker.toLowerCase().startsWith(q.toLowerCase()) ||
-      t.name.toLowerCase().includes(q.toLowerCase()) ||
-      t.sector.toLowerCase().includes(q.toLowerCase())
+      t.ticker.toLowerCase().startsWith(ql) ||
+      wordMatch(t.name) ||
+      t.sector.toLowerCase().startsWith(ql)
     ).slice(0, 6)
 
     setSuggestions(local)

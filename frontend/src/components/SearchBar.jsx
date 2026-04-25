@@ -100,10 +100,11 @@ export default function SearchBar({ onSearch, loading }) {
   const ref = useRef(null)
 
   const results = val.length > 0
-    ? TICKERS.filter(t =>
-        t.ticker.toLowerCase().startsWith(val.toLowerCase()) ||
-        t.name.toLowerCase().includes(val.toLowerCase())
-      ).slice(0, 6)
+    ? TICKERS.filter(t => {
+        const vl = val.toLowerCase()
+        const wordMatch = t.name.toLowerCase().split(/\s+/).some(w => w.startsWith(vl))
+        return t.ticker.toLowerCase().startsWith(vl) || wordMatch
+      }).slice(0, 6)
     : []
 
   useEffect(() => {
