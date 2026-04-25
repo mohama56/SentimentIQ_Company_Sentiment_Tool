@@ -108,7 +108,7 @@ function CompanyLogo({ ticker, domain, size = 40 }) {
 }
 
 /* ─── Watchlist card ──────────────────────────────────────────────────────── */
-function WatchlistCard({ item, onRemove, onAnalyse }) {
+function WatchlistCard({ item, onRemove, onAnalyse, isRefreshing = false }) {
   const [removing, setRemoving] = useState(false)
   const info    = getCompanyInfo(item.ticker)
   const col     = scoreColor(item.score)
@@ -119,13 +119,32 @@ function WatchlistCard({ item, onRemove, onAnalyse }) {
   return (
     <div className="card fade-up" style={{
       padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-      border: `1px solid ${item.score != null ? border : 'var(--border)'}`,
+      border: `1px solid ${isRefreshing ? 'rgba(99,126,255,0.4)' : item.score != null ? border : 'var(--border)'}`,
       transition: 'border-color 0.3s',
+      position: 'relative',
     }}>
-      {/* Score bar accent */}
-      {item.score != null && (
-        <div style={{ height: 3, background: `linear-gradient(90deg, ${col}60, ${col})`, width: '100%' }}/>
+      {/* Refreshing shimmer overlay */}
+      {isRefreshing && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(99,126,255,0.06) 50%, transparent 100%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.6s linear infinite',
+        }}/>
       )}
+
+      {/* Score bar accent — pulsing blue while refreshing */}
+      <div style={{
+        height: 3,
+        background: isRefreshing
+          ? 'linear-gradient(90deg, rgba(99,126,255,0.4), rgba(6,214,224,0.8), rgba(99,126,255,0.4))'
+          : item.score != null
+            ? `linear-gradient(90deg, ${col}60, ${col})`
+            : 'transparent',
+        width: '100%',
+        backgroundSize: isRefreshing ? '200% 100%' : '100% 100%',
+        animation: isRefreshing ? 'shimmer 1.6s linear infinite' : 'none',
+      }}/>
 
       {/* Card body */}
       <div style={{ padding: '16px 18px', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -156,7 +175,15 @@ function WatchlistCard({ item, onRemove, onAnalyse }) {
 
           {/* Score */}
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            {item.score != null ? (
+            {isRefreshing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 48 }}>
+                <svg style={{ animation: 'spin 1s linear infinite' }} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--blue-light)" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="9" strokeOpacity="0.2"/>
+                  <path d="M12 3a9 9 0 019 9" strokeLinecap="round"/>
+                </svg>
+                <div style={{ fontSize: 9, color: 'var(--text-3)', fontWeight: 600, letterSpacing: '0.04em' }}>UPDATING</div>
+              </div>
+            ) : item.score != null ? (
               <>
                 <div style={{
                   fontFamily: 'Space Mono, monospace', fontSize: 26, fontWeight: 800, lineHeight: 1,
@@ -301,20 +328,67 @@ function PortalDropdown({ anchorRef, suggestions, highlighted, onSelect, onHover
 
 /* ─── Main panel ──────────────────────────────────────────────────────────── */
 export default function WatchlistPanel({ onAnalyse }) {
-  const [items, setItems]             = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [input, setInput]             = useState('')
-  const [adding, setAdding]           = useState(false)
-  const [error, setError]             = useState('')
-  const [suggestions, setSuggestions] = useState([])
-  const [dropOpen, setDropOpen]       = useState(false)
-  const [highlighted, setHighlighted] = useState(-1)
-  const [searching, setSearching]     = useState(false)
+  const [items, setItems]                   = useState([])
+  const [loading, setLoading]               = useState(true)
+  const [input, setInput]                   = useState('')
+  const [adding, setAdding]                 = useState(false)
+  const [error, setError]                   = useState('')
+  const [suggestions, setSuggestions]       = useState([])
+  const [dropOpen, setDropOpen]             = useState(false)
+  const [highlighted, setHighlighted]       = useState(-1)
+  const [searching, setSearching]           = useState(false)
+  const [refreshingSet, setRefreshingSet]   = useState(new Set())   // tickers currently being refreshed
+  const [refreshQueue, setRefreshQueue]     = useState([])          // tickers waiting to be refreshed
+  const [refreshDone, setRefreshDone]       = useState(0)           // how many have finished
+  const [refreshTotal, setRefreshTotal]     = useState(0)           // total stale count for this visit
+  const [refreshError, setRefreshError]     = useState('')          // last ticker that failed
+  const refreshRunning = useRef(false)      // guard against double-starts
   const inputWrapRef = useRef(null)
   const debounceRef  = useRef(null)
   const isMobile     = useWindowWidth() < 768
 
-  /* Live search */
+  /* ── Stale detection helper ──────────────────────────────────────────────── */
+  function todayUTC() {
+    return new Date().toISOString().slice(0, 10)   // "2026-04-24"
+  }
+
+  function isStale(item) {
+    return item.score === null || item.date !== todayUTC()
+  }
+
+  /* ── Sequential auto-refresh engine ─────────────────────────────────────── */
+  // Runs once after initial watchlist load (and on manual add so newly-added stale items get queued)
+  const runRefreshQueue = useCallback(async (queue) => {
+    if (!queue.length || refreshRunning.current) return
+    refreshRunning.current = true
+
+    for (const ticker of queue) {
+      // Mark card as refreshing
+      setRefreshingSet(prev => new Set([...prev, ticker]))
+
+      try {
+        const res  = await fetch(`${BASE}/get_temperature_score?ticker=${encodeURIComponent(ticker)}`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        // Score saved server-side; now pull the updated watchlist entry for just this ticker
+        const wRes  = await fetch(`${BASE}/watchlist`)
+        const wData = await wRes.json()
+        const updated = (wData.watchlist || []).find(w => w.ticker === ticker)
+        if (updated) {
+          setItems(prev => prev.map(it => it.ticker === ticker ? updated : it))
+        }
+      } catch {
+        setRefreshError(ticker)
+      }
+
+      // Unmark refreshing, increment done count
+      setRefreshingSet(prev => { const s = new Set(prev); s.delete(ticker); return s })
+      setRefreshDone(d => d + 1)
+    }
+
+    refreshRunning.current = false
+  }, [])
+
+  /* ── Live search ─────────────────────────────────────────────────────────── */
   useEffect(() => {
     const q = input.trim()
     if (!q) { setSuggestions([]); setDropOpen(false); return }
@@ -373,12 +447,27 @@ export default function WatchlistPanel({ onAnalyse }) {
     try {
       const res  = await fetch(`${BASE}/watchlist`)
       const data = await res.json()
-      setItems(data.watchlist || [])
+      const list = data.watchlist || []
+      setItems(list)
+      return list
     } catch { setError('Could not load watchlist.') }
     finally  { setLoading(false) }
   }, [])
 
-  useEffect(() => { fetchWatchlist() }, [fetchWatchlist])
+  // On mount: load watchlist, then detect & queue stale items
+  useEffect(() => {
+    fetchWatchlist().then(list => {
+      if (!list) return
+      const stale = list.filter(isStale).map(i => i.ticker)
+      if (stale.length) {
+        setRefreshQueue(stale)
+        setRefreshTotal(stale.length)
+        setRefreshDone(0)
+        runRefreshQueue(stale)
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])   // intentionally runs once on mount
 
   const doAdd = async (ticker) => {
     const t = ticker.trim().toUpperCase()
@@ -390,7 +479,20 @@ export default function WatchlistPanel({ onAnalyse }) {
         body: JSON.stringify({ ticker: t }),
       })
       if (!res.ok) { const b = await res.json().catch(() => ({})); setError(b.detail || 'Failed to add ticker.') }
-      else { setInput(''); setDropOpen(false); setSuggestions([]); await fetchWatchlist() }
+      else {
+        setInput(''); setDropOpen(false); setSuggestions([])
+        const list = await fetchWatchlist()
+        // If newly-added ticker is stale (no score yet), append to queue
+        if (list) {
+          const newItem = list.find(i => i.ticker === t)
+          if (newItem && isStale(newItem) && !refreshingSet.has(t) && !refreshQueue.includes(t)) {
+            const newQueue = [t]
+            setRefreshQueue(prev => [...prev, t])
+            setRefreshTotal(prev => prev + 1)
+            runRefreshQueue(newQueue)
+          }
+        }
+      }
     } catch { setError('Network error.') }
     finally  { setAdding(false) }
   }
@@ -398,8 +500,56 @@ export default function WatchlistPanel({ onAnalyse }) {
   const handleAdd    = () => doAdd(input)
   const handleRemove = async t => { await fetch(`${BASE}/watchlist/${t}`, { method: 'DELETE' }); await fetchWatchlist() }
 
+  /* ── Banner state ────────────────────────────────────────────────────────── */
+  const isAutoRefreshing  = refreshingSet.size > 0
+  const bannerVisible     = refreshTotal > 0 && refreshDone < refreshTotal
+  const bannerRemaining   = refreshTotal - refreshDone
+  const allDone           = refreshTotal > 0 && refreshDone >= refreshTotal && !isAutoRefreshing
+  const [showDoneBanner, setShowDoneBanner] = useState(false)
+
+  useEffect(() => {
+    if (allDone) {
+      setShowDoneBanner(true)
+      const t = setTimeout(() => { setShowDoneBanner(false); setRefreshTotal(0); setRefreshDone(0) }, 4000)
+      return () => clearTimeout(t)
+    }
+  }, [allDone])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* Auto-refresh progress banner */}
+      {(bannerVisible || showDoneBanner) && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '13px 18px', borderRadius: 12,
+          background: showDoneBanner ? 'rgba(0,245,160,0.07)' : 'rgba(99,126,255,0.08)',
+          border: `1px solid ${showDoneBanner ? 'rgba(0,245,160,0.25)' : 'rgba(99,126,255,0.25)'}`,
+          fontSize: 13, fontWeight: 600, color: showDoneBanner ? '#00f5a0' : 'var(--blue-light)',
+          animation: 'fade-up 0.3s ease',
+        }}>
+          {showDoneBanner ? (
+            <>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              All watchlist scores updated!
+              {refreshError && <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 400, marginLeft: 6 }}>({refreshError} failed — will retry next visit)</span>}
+            </>
+          ) : (
+            <>
+              <svg style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="9" strokeOpacity="0.2"/>
+                <path d="M12 3a9 9 0 019 9" strokeLinecap="round"/>
+              </svg>
+              Auto-updating {bannerRemaining} {bannerRemaining === 1 ? 'company' : 'companies'}…
+              <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 400 }}>
+                ({refreshDone}/{refreshTotal} done · ~25–45s each)
+              </span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Header */}
       <div className="card" style={{ padding: '22px 24px' }}>
@@ -473,7 +623,13 @@ export default function WatchlistPanel({ onAnalyse }) {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
           {items.map(item => (
-            <WatchlistCard key={item.ticker} item={item} onRemove={handleRemove} onAnalyse={onAnalyse} />
+            <WatchlistCard
+              key={item.ticker}
+              item={item}
+              onRemove={handleRemove}
+              onAnalyse={onAnalyse}
+              isRefreshing={refreshingSet.has(item.ticker)}
+            />
           ))}
         </div>
       )}
