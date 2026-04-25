@@ -98,7 +98,7 @@ export default function App() {
       }}>
         {/* Logo */}
         <div style={{ padding: '20px 20px 18px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+          <div onClick={() => setActiveView('Dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }}>
 
             {/* Icon mark */}
             <div style={{
@@ -271,13 +271,17 @@ export default function App() {
               </span>
             ) : (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <span style={{
-                  fontWeight: 800, fontSize: 13, letterSpacing: '-0.01em',
-                  background: 'linear-gradient(90deg, #818cf8, #38bdf8)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}>SentimentIQ</span>
+                <span
+                  onClick={() => setActiveView('Dashboard')}
+                  style={{
+                    fontWeight: 800, fontSize: 13, letterSpacing: '-0.01em',
+                    background: 'linear-gradient(90deg, #818cf8, #38bdf8)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    cursor: 'pointer',
+                  }}
+                >SentimentIQ</span>
                 <span style={{
                   fontSize: 10, fontWeight: 600, color: 'var(--text-3)',
                   padding: '2px 8px', border: '1px solid var(--border)',
