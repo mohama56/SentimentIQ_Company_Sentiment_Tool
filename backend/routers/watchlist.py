@@ -22,9 +22,10 @@ def get_watchlist_scores():
         latest  = history[-1] if history else None
         results.append({
             "ticker":       ticker,
-            "score":        latest["score"] if latest else None,
-            "label":        latest["label"] if latest else None,
-            "date":         latest["date"]  if latest else None,
+            "score":        latest["score"]        if latest else None,
+            "label":        latest["label"]        if latest else None,
+            "date":         latest["date"]         if latest else None,
+            "computed_at":  latest.get("computed_at") if latest else None,
             "days_tracked": len(history),
             "history":      [{"date": h["date"], "score": h["score"]} for h in history[-7:]],
         })
